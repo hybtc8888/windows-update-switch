@@ -1,6 +1,6 @@
 # Windows Update Switch
 
-A small local Windows utility for controlling automatic Windows and Microsoft Store updates. Select **Disable updates** before long-running work and **Enable updates** for maintenance.
+Built to keep Windows updates from interrupting long-running Codex goal-mode tasks, model training, and other extended work. This small local utility controls automatic Windows and Microsoft Store updates: select **Disable updates** before a long run and **Enable updates** for maintenance.
 
 ## Download
 
