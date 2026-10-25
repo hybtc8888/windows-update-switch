@@ -39,6 +39,16 @@ powershell -NoProfile -ExecutionPolicy Bypass -File .\测试.ps1
 
 The build uses the .NET Framework C# compiler included with Windows. Tests use a simulated platform and do not change Windows Update settings.
 
+Version 1.4.1 fixes persistent memory growth in repeated COM task queries. Task reads, writes, and installer-busy queries use explicit COM dispatch and object release; existing protection and recovery settings are preserved.
+
+To run the read-only memory regression against the built executable:
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File .\测试内存.ps1 -Scans 20000
+```
+
+Results are written to `dist/memory-test`: memory samples, scan snapshots, and a summary. The probe does not write update settings. A sanitized validation summary is in `verification/memory-fix-1.4.1.json`.
+
 ## License
 
 MIT. See [LICENSE](LICENSE).

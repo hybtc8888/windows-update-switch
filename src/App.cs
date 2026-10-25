@@ -15,8 +15,8 @@ using System.Windows.Forms;
 
 [assembly: System.Reflection.AssemblyTitle("Windows Update Switch")]
 [assembly: System.Reflection.AssemblyDescription("Local Windows update control and monitoring")]
-[assembly: System.Reflection.AssemblyVersion("1.4.0.0")]
-[assembly: System.Reflection.AssemblyFileVersion("1.4.0.0")]
+[assembly: System.Reflection.AssemblyVersion("1.4.1.0")]
+[assembly: System.Reflection.AssemblyFileVersion("1.4.1.0")]
 
 namespace UpdateSwitch {
     static class App {

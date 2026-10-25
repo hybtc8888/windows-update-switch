@@ -1,0 +1,35 @@
+{
+  "schema_version": 1,
+  "date": "2026-10-25",
+  "version": "1.4.1",
+  "component": "UpdateSwitch.WindowsPlatform and Native",
+  "component_source_sha256": "bef52ea92c0c18f90cb264e66ab8309d099626216697f1ade5326609cbc1fa16",
+  "repository_validation": {
+    "build": "passed",
+    "simulated_checks": 23,
+    "read_only_scans": 3000,
+    "busy_queries": 1500,
+    "managed_mib_before": 1.633,
+    "managed_mib_after_gc": 1.609,
+    "snapshot_values_unchanged": false,
+    "snapshot_note": "UsoSvc and WaaSMedicSvc transitioned from stopped to running between snapshots; the probe performs no writes."
+  },
+  "shared_component_deployment_validation": {
+    "scope": "The same WindowsPlatform and Native source was tested in a local guard build; the repository retains its existing UI and upgrade implementation.",
+    "user_scans": 20000,
+    "user_managed_mib_after_gc": 1.473,
+    "system_scans": 20000,
+    "system_managed_mib_after_gc": 1.438,
+    "system_scan_items": 34,
+    "system_scan_and_busy_equivalence": true,
+    "idempotent_task_write": "passed",
+    "live_service_seconds": 606.8,
+    "live_service_private_mib_range": [
+      29.074,
+      29.703
+    ],
+    "configuration_items_preserved": 34,
+    "protection_errors": 0,
+    "limitation": "Accelerated scans and a ten-minute live observation; not a multi-day soak."
+  }
+}

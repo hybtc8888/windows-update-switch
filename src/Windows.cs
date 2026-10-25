@@ -4,7 +4,9 @@ using System.ComponentModel;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 using System.Runtime.InteropServices;
+using System.Runtime.ExceptionServices;
 using System.Security.AccessControl;
 using System.Security.Principal;
 using System.ServiceProcess;
@@ -57,17 +59,22 @@ namespace UpdateSwitch {
                 try { string[] pair = policy.Split('|'); result.Items.Add(new Item { Kind="policy", Name=policy, Value=ReadNumber(pair[0], pair[1]) }); }
                 catch (Exception ex) { result.Errors.Add("读取策略：" + ex.Message); }
             }
-            dynamic scheduler = null;
+            object scheduler = null;
             try {
-                scheduler = Activator.CreateInstance(Type.GetTypeFromProgID("Schedule.Service", true)); scheduler.Connect();
+                scheduler = Activator.CreateInstance(Type.GetTypeFromProgID("Schedule.Service", true));
+                ComCall(scheduler, "Connect", BindingFlags.InvokeMethod);
                 foreach (string path in Folders) {
-                    dynamic folder = null, tasks = null;
+                    object folder = null, tasks = null;
                     try {
-                        folder = scheduler.GetFolder(path); tasks = folder.GetTasks(1);
-                        for (int i=1; i<=tasks.Count; i++) {
-                            dynamic task = tasks[i];
-                            try { result.Items.Add(new Item { Kind="task", Name=(string)task.Path, Value=(bool)task.Enabled ? 1 : 0 }); }
-                            finally { Marshal.FinalReleaseComObject(task); }
+                        folder = ComCall(scheduler, "GetFolder", BindingFlags.InvokeMethod, path);
+                        tasks = ComCall(folder, "GetTasks", BindingFlags.InvokeMethod, 1);
+                        int count = Convert.ToInt32(ComCall(tasks, "Count", BindingFlags.GetProperty));
+                        for (int i=1; i<=count; i++) {
+                            object task = null;
+                            try {
+                                task = ComCall(tasks, "Item", BindingFlags.GetProperty, i);
+                                result.Items.Add(new Item { Kind="task", Name=(string)ComCall(task, "Path", BindingFlags.GetProperty), Value=(bool)ComCall(task, "Enabled", BindingFlags.GetProperty) ? 1 : 0 });
+                            } finally { if (task != null) Marshal.FinalReleaseComObject(task); }
                         }
                     } catch (Exception ex) {
                         if (ex.HResult != unchecked((int)0x80070002) && ex.HResult != unchecked((int)0x80070003)) result.Errors.Add("读取任务目录 " + path + "：" + ex.Message);
@@ -76,6 +83,15 @@ namespace UpdateSwitch {
             } catch (Exception ex) { result.Errors.Add("读取计划任务：" + ex.Message); }
             finally { if (scheduler != null) Marshal.FinalReleaseComObject(scheduler); }
             return result;
+        }
+        // Dynamic COM call sites retain objects across repeated scans on .NET Framework.
+        // Use IDispatch directly, with ordinary object locals and deterministic COM release.
+        static object ComCall(object target, string name, BindingFlags flags, params object[] arguments) {
+            try { return target.GetType().InvokeMember(name, flags | BindingFlags.OptionalParamBinding, null, target, arguments); }
+            catch (TargetInvocationException ex) {
+                if (ex.InnerException != null) ExceptionDispatchInfo.Capture(ex.InnerException).Throw();
+                throw;
+            }
         }
         public void Write(Item item, int? value, bool restore) {
             if (!IsAllowed(item)) throw new InvalidOperationException("不在工具管理范围内");
@@ -103,10 +119,13 @@ namespace UpdateSwitch {
                     sc.WaitForStatus(ServiceControllerStatus.Stopped, TimeSpan.FromSeconds(8));
                 }
             } else {
-                dynamic scheduler = null, root = null, task = null;
+                object scheduler = null, root = null, task = null;
                 try {
-                    scheduler = Activator.CreateInstance(Type.GetTypeFromProgID("Schedule.Service", true)); scheduler.Connect();
-                    root = scheduler.GetFolder("\\"); task = root.GetTask(item.Name); task.Enabled = value == 1;
+                    scheduler = Activator.CreateInstance(Type.GetTypeFromProgID("Schedule.Service", true));
+                    ComCall(scheduler, "Connect", BindingFlags.InvokeMethod);
+                    root = ComCall(scheduler, "GetFolder", BindingFlags.InvokeMethod, "\\");
+                    task = ComCall(root, "GetTask", BindingFlags.InvokeMethod, item.Name);
+                    ComCall(task, "Enabled", BindingFlags.SetProperty, value == 1);
                 } finally {
                     if (task != null) Marshal.FinalReleaseComObject(task);
                     if (root != null) Marshal.FinalReleaseComObject(root);
@@ -147,7 +166,7 @@ namespace UpdateSwitch {
             object installer = null;
             try {
                 installer = Activator.CreateInstance(Type.GetTypeFromProgID("Microsoft.Update.Installer", true));
-                if ((bool)((dynamic)installer).IsBusy) return "Windows 正在安装更新，暂不强行停止。";
+                if ((bool)ComCall(installer, "IsBusy", BindingFlags.GetProperty)) return "Windows 正在安装更新，暂不强行停止。";
             } catch (COMException ex) {
                 if (ex.ErrorCode != unchecked((int)0x80070422) && ex.ErrorCode != unchecked((int)0x8024001E)) return "无法确定是否正在安装更新：" + ex.Message;
             } catch (Exception ex) { return "无法读取更新安装状态：" + ex.Message; }

@@ -39,6 +39,16 @@ powershell -NoProfile -ExecutionPolicy Bypass -File .\测试.ps1
 
 构建使用 Windows 自带的 .NET Framework C# 编译器。测试使用模拟平台，不修改 Windows 更新设置。
 
+1.4.1 修复反复查询计划任务时的持续内存增长。任务读取、写入和更新忙碌查询统一使用显式 COM 调用及对象释放，保留原有保护与恢复配置。
+
+对编译后的程序运行只读内存回归：
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File .\测试内存.ps1 -Scans 20000
+```
+
+`dist/memory-test` 输出内存采样、扫描快照和运行摘要；测试不改写更新设置。脱敏验收摘要见 `verification/memory-fix-1.4.1.json`。
+
 ## 许可
 
 MIT 许可，详见 [LICENSE](LICENSE)。
